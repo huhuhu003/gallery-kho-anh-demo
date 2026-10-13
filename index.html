@@ -108,14 +108,6 @@ button.primary:hover{border-color:var(--gold-hover);color:var(--text-white)}
 /* Tool chèn logo: preview dùng cùng tọa độ ảnh với bản xuất. */
 #logo-tool{max-width:1100px;margin:auto}
 #logo-tool button,.logo-drag-label{min-height:48px}
-#erase-tool{max-width:1100px;margin:auto}
-#erase-tool button,.erase-label{min-height:48px}
-.erase-preview{position:relative;max-width:100%;margin:12px auto;text-align:center}
-#erase-canvas{display:block;width:auto;max-width:100%;height:auto;max-height:60vh;margin:0 auto;object-fit:contain}
-#erase-mask{position:absolute;top:0;left:50%;transform:translateX(-50%);pointer-events:auto;touch-action:none;cursor:crosshair}
-#erase-mask.erase-drawing{touch-action:none;cursor:crosshair}
-.erase-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
-.erase-size-row{display:flex;gap:10px;align-items:center}
 .logo-preview{width:100%;max-height:60vh;background:var(--bg-photo);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin:16px 0}
 #logo-canvas{display:block;width:auto;max-width:100%;height:auto;max-height:60vh;margin:0 auto;object-fit:contain}
 #logo-canvas.free-drag{touch-action:none;cursor:grab}
@@ -271,7 +263,6 @@ body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolba
 <a class="nav-item active" href="#" id="nav-home"><span class="nav-bar"></span>Trang chủ</a>
 <a class="nav-item" href="https://huhuhu003.github.io/hop-thu-gui-nhanh/" target="_blank" rel="noopener"><span class="nav-bar"></span>Kho up ảnh</a>
 <button class="nav-item" id="nav-logo" type="button"><span class="nav-bar"></span>Chèn logo</button>
-<button class="nav-item" id="nav-erase" type="button"><span class="nav-bar"></span>Xóa vật thể</button>
 <button class="nav-item" id="nav-theme" type="button"><span class="nav-bar"></span><span id="nav-theme-label">Chế độ tối</span></button>
 <aside class="filters" id="filters" aria-label="Bộ lọc sản phẩm"><div class="filter-body"><div class="filter-header"><strong>BỘ LỌC</strong></div><button class="text-button" id="clear-filters">Xóa tất cả bộ lọc</button>
 <input class="filter-tab-state" type="radio" name="filter-tab" id="filter-brand" aria-label="Hãng" aria-controls="filter-brands" checked><input class="filter-tab-state" type="radio" name="filter-tab" id="filter-category" aria-label="Danh mục" aria-controls="filter-categories"><input class="filter-tab-state" type="radio" name="filter-tab" id="filter-price" aria-label="Giá" aria-controls="filter-prices">
@@ -330,17 +321,6 @@ body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolba
 <button id="logo-apply" type="button" disabled>Áp vị trí này cho ảnh còn lại</button>
 <div id="logo-thumbnails" aria-label="Các ảnh đã chọn"></div>
 <div class="logo-controls"><button id="logo-download" class="primary" type="button" disabled>Tải tất cả</button><button id="logo-clear" type="button" disabled>Xóa hết</button></div>
-</section>
-<section id="erase-tool" aria-labelledby="erase-title" hidden>
-<div class="intro"><h1 id="erase-title">Xóa vật thể</h1><p class="muted">Tô vùng cần xóa bằng cọ, bấm Xóa vật thể để lấp lại. Hoặc nhấn Ctrl+V / Cmd+V để dán ảnh.</p></div>
-<input id="erase-files" type="file" accept="image/*" hidden>
-<button id="erase-select" class="primary" type="button">Chọn ảnh</button>
-<button id="erase-paste" type="button">Dán ảnh</button>
-<p id="erase-status" class="muted" role="status">Chưa chọn ảnh.</p>
-<div class="erase-preview"><canvas id="erase-canvas" width="960" height="600" aria-label="Ảnh xem trước để xóa vật thể">Ảnh xem trước</canvas><canvas id="erase-mask" width="960" height="600" aria-hidden="true"></canvas></div>
-<div class="erase-controls erase-size-row"><label for="erase-brush-size">Cỡ cọ <output id="erase-brush-value" for="erase-brush-size">30px</output></label><input id="erase-brush-size" type="range" min="5" max="100" step="1" value="30" aria-label="Cỡ cọ tô vùng xóa"></div>
-<div class="erase-controls"><button id="erase-undo" type="button" disabled>Hoàn tác</button><button id="erase-clear-mask" type="button" disabled>Xóa hết vùng tô</button><button id="erase-run" class="primary" type="button" disabled>Xóa vật thể</button></div>
-<div class="erase-controls"><label class="erase-label"><input id="erase-compare" type="checkbox"> Giữ để xem ảnh gốc</label><button id="erase-download" class="primary" type="button" disabled>Tải về</button><button id="erase-ask" type="button" disabled>Nhờ đệ sửa</button><button id="erase-clear" type="button" disabled>Xóa hết</button></div>
 </section>
 </main>
 <dialog class="modal" id="settings"><h2>Cài đặt kho ảnh</h2><form id="settings-form"><label for="root-input">ID thư mục gốc Google Drive</label><input id="root-input" type="text" required pattern="[A-Za-z0-9_-]+" autocomplete="off"><p class="muted">Lưu thư mục sẽ quét lại kho ảnh từ đầu.</p><label for="sheet-input">ID Google Sheet giờ làm việc</label><input id="sheet-input" type="text" pattern="[A-Za-z0-9_-]+" autocomplete="off" placeholder="Để trống nếu chưa có"><p class="muted">Đại ca tạo sheet "Giờ làm việc" trên mail mình, share quyền Editor cho mail chị, rồi dán ID sheet vào đây để app tự ghi giờ chấm công.</p><div class="buttons"><button class="primary" type="submit">Lưu thư mục</button><button type="button" id="reset-root">Khôi phục mặc định</button><button type="button" id="close-settings">Đóng</button></div></form></dialog>
@@ -488,9 +468,8 @@ $('theme-toggle').addEventListener('click',() => {
   $('nav-close').addEventListener('click', closeNav);
   backdrop.addEventListener('click', closeNav);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebar.classList.contains('open')) closeNav(); });
-  $('nav-home').addEventListener('click', e => { e.preventDefault(); showLogoTool(false); showEraseTool(false); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
+  $('nav-home').addEventListener('click', e => { e.preventDefault(); showLogoTool(false); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
   $('nav-logo').addEventListener('click', () => { showLogoTool(true); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
-  $('nav-erase').addEventListener('click', () => { showEraseTool(true); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
   $('nav-theme').addEventListener('click', () => { $('theme-toggle').click(); syncNavThemeLabel(); });
   syncNavThemeLabel();
 })();
@@ -722,7 +701,7 @@ async function scan() {
   $('grid').replaceChildren(); $('brand-options').replaceChildren(); options.brand.clear();
   Object.values(counts).forEach(map => map.clear()); clearFilters();
   Object.values(options).forEach(map => map.forEach(option => { option.count.textContent = '0'; }));
-  $('gallery').hidden = !$('logo-tool').hidden || !$('erase-tool').hidden; $('login').hidden = true; $('logout').hidden = true;
+  $('gallery').hidden = !$('logo-tool').hidden; $('login').hidden = true; $('logout').hidden = true;
   $('scan-spinner').hidden = false; $('retry').hidden = true; $('scan-status').textContent = 'Đang đọc danh sách hãng…';
   try {
     brands = demoBrands();
@@ -814,14 +793,9 @@ $('settings-form').addEventListener('submit',event => { event.preventDefault(); 
 $('reset-root').addEventListener('click',() => saveRoot(DEFAULT_ROOT,true));
 // pos là góc trên-trái của logo, theo tỉ lệ kích thước ảnh gốc.
 function showLogoTool(open) {
-  $('gallery').hidden = open; $('logo-tool').hidden = !open; $('erase-tool').hidden = true;
-  $('nav-home').classList.toggle('active', !open); $('nav-logo').classList.toggle('active', open); $('nav-erase').classList.toggle('active', false);
+  $('gallery').hidden = open; $('logo-tool').hidden = !open;
+  $('nav-home').classList.toggle('active', !open); $('nav-logo').classList.toggle('active', open);
   if (open) renderLogoPreview();
-}
-function showEraseTool(open) {
-  $('gallery').hidden = open; $('erase-tool').hidden = !open; $('logo-tool').hidden = true;
-  $('nav-home').classList.toggle('active', !open); $('nav-erase').classList.toggle('active', open); $('nav-logo').classList.toggle('active', false);
-  if (open) renderErasePreview();
 }
 const logoImage = new Image();
 let logoReady = false, logoFailed = false, logoItems = [], logoIndex = 0, logoBusy = false, logoDrag = null;
@@ -905,7 +879,7 @@ document.addEventListener('paste', event => {
     .map(item => item.getAsFile()).filter(Boolean);
   if (!files.length) return;
   event.preventDefault();
-  if (!$('erase-tool').hidden) addEraseFiles(files); else addLogoFiles(files);
+  addLogoFiles(files);
 });
 $('logo-paste').addEventListener('click', async () => {
   try {
@@ -989,315 +963,6 @@ $('logo-download').addEventListener('click', async () => {
   logoBusy = false; renderLogoPreview(); toast('Đã gửi tải ' + downloaded + '/' + logoItems.length + ' ảnh');
 });
 // ===== TOOL XÓA VẬT THỂ =====
-let eraseImg = null, eraseFileName = '', eraseUrl = '', eraseBusy = false;
-let eraseStrokes = [], eraseCurrentStroke = null, eraseDrawing = false;
-let eraseOriginalImg = null;
-const eraseCanvas = $('erase-canvas'), eraseCtx = eraseCanvas.getContext('2d');
-const eraseMask = $('erase-mask'), eraseMaskCtx = eraseMask.getContext('2d');
-
-function eraseSyncMaskGeometry() {
-  const rect = eraseCanvas.getBoundingClientRect();
-  const wrap = eraseCanvas.parentElement.getBoundingClientRect();
-  eraseMask.style.width = rect.width + 'px';
-  eraseMask.style.height = rect.height + 'px';
-  eraseMask.style.left = (rect.left - wrap.left + rect.width / 2) + 'px';
-  eraseMask.style.top = (rect.top - wrap.top) + 'px';
-}
-function renderErasePreview() {
-  const hasImg = !!eraseImg;
-  eraseCanvas.hidden = !hasImg;
-  eraseMask.hidden = !hasImg;
-  $('erase-status').textContent = eraseBusy ? 'Đang xử lý…' : hasImg ? eraseFileName : 'Chưa chọn ảnh.';
-  $('erase-run').disabled = eraseBusy || !hasImg || !eraseStrokes.length;
-  $('erase-undo').disabled = eraseBusy || !eraseStrokes.length;
-  $('erase-clear-mask').disabled = eraseBusy || !eraseStrokes.length;
-  $('erase-download').disabled = eraseBusy || !hasImg;
-  $('erase-ask').disabled = eraseBusy || !hasImg;
-  $('erase-clear').disabled = eraseBusy || !hasImg;
-  $('erase-select').disabled = eraseBusy;
-  $('erase-paste').disabled = eraseBusy;
-  $('erase-brush-size').disabled = eraseBusy || !hasImg;
-  $('erase-compare').disabled = eraseBusy || !hasImg || !eraseOriginalImg;
-  $('erase-brush-value').textContent = $('erase-brush-size').value + 'px';
-  if (!hasImg) return;
-  const showOriginal = $('erase-compare').checked && eraseOriginalImg;
-  const imgToShow = showOriginal ? eraseOriginalImg : eraseImg;
-  const scale = Math.min(1, 1200 / imgToShow.naturalWidth, 750 / imgToShow.naturalHeight);
-  const pw = Math.max(1, Math.round(imgToShow.naturalWidth * scale));
-  const ph = Math.max(1, Math.round(imgToShow.naturalHeight * scale));
-  if (eraseCanvas.width !== pw || eraseCanvas.height !== ph) {
-    eraseCanvas.width = pw; eraseCanvas.height = ph;
-    eraseMask.width = pw; eraseMask.height = ph;
-  }
-  eraseCtx.imageSmoothingEnabled = true; eraseCtx.imageSmoothingQuality = 'high';
-  eraseCtx.drawImage(imgToShow, 0, 0, pw, ph);
-  eraseMaskCtx.clearRect(0, 0, eraseMask.width, eraseMask.height);
-  if (!showOriginal) {
-    eraseMaskCtx.fillStyle = 'rgba(255,0,0,0.4)';
-    eraseMaskCtx.strokeStyle = 'rgba(255,0,0,0.4)';
-    eraseMaskCtx.lineCap = 'round'; eraseMaskCtx.lineJoin = 'round';
-    const scaleRatio = pw / eraseImg.naturalWidth;
-    const strokesToDraw = eraseCurrentStroke ? [...eraseStrokes, eraseCurrentStroke] : eraseStrokes;
-    for (const stroke of strokesToDraw) {
-      if (stroke.points.length === 1) {
-        eraseMaskCtx.beginPath();
-        eraseMaskCtx.arc(stroke.points[0].x * pw, stroke.points[0].y * ph, stroke.size / 2 * scaleRatio, 0, Math.PI * 2);
-        eraseMaskCtx.fill();
-      } else {
-        eraseMaskCtx.lineWidth = stroke.size * scaleRatio;
-        eraseMaskCtx.beginPath();
-        eraseMaskCtx.moveTo(stroke.points[0].x * pw, stroke.points[0].y * ph);
-        for (let i = 1; i < stroke.points.length; i++) eraseMaskCtx.lineTo(stroke.points[i].x * pw, stroke.points[i].y * ph);
-        eraseMaskCtx.stroke();
-      }
-    }
-  }
-  eraseSyncMaskGeometry();
-}
-function eraseMaskPoint(event) {
-  const rect = eraseMask.getBoundingClientRect();
-  return {x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height};
-}
-eraseMask.addEventListener('pointerdown', event => {
-  if (!eraseImg || eraseBusy || !event.isPrimary) return;
-  event.preventDefault();
-  eraseDrawing = true;
-  eraseCurrentStroke = {size: Number($('erase-brush-size').value), points: [eraseMaskPoint(event)]};
-  eraseMask.setPointerCapture(event.pointerId);
-  eraseMask.classList.add('erase-drawing');
-});
-eraseMask.addEventListener('pointermove', event => {
-  if (!eraseDrawing || !eraseCurrentStroke) return;
-  eraseCurrentStroke.points.push(eraseMaskPoint(event));
-  renderErasePreview();
-});
-['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => eraseMask.addEventListener(type, event => {
-  if (!eraseDrawing) return;
-  eraseDrawing = false;
-  if (eraseCurrentStroke && eraseCurrentStroke.points.length) eraseStrokes.push(eraseCurrentStroke);
-  eraseCurrentStroke = null;
-  eraseMask.classList.remove('erase-drawing');
-  renderErasePreview();
-}));
-$('erase-brush-size').addEventListener('input', () => { $('erase-brush-value').textContent = $('erase-brush-size').value + 'px'; });
-$('erase-undo').addEventListener('click', () => {
-  if (eraseBusy || !eraseStrokes.length) return;
-  eraseStrokes.pop();
-  renderErasePreview();
-});
-$('erase-clear-mask').addEventListener('click', () => {
-  if (eraseBusy) return;
-  eraseStrokes = [];
-  renderErasePreview();
-});
-$('erase-select').addEventListener('click', () => $('erase-files').click());
-$('erase-files').addEventListener('change', async event => {
-  const files = Array.from(event.target.files); event.target.value = '';
-  await addEraseFiles(files);
-});
-async function addEraseFiles(files) {
-  if (eraseBusy || !files.length) return;
-  eraseBusy = true; renderErasePreview();
-  const file = files[0];
-  const fileName = file.name || 'anh-dan-1.png';
-  const url = URL.createObjectURL(file), img = new Image();
-  try {
-    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
-    if (eraseUrl) URL.revokeObjectURL(eraseUrl);
-    eraseImg = img; eraseFileName = fileName; eraseUrl = url;
-    eraseOriginalImg = img;
-    eraseStrokes = [];
-    toast('Đã thêm ảnh: ' + fileName);
-  } catch (_) {
-    URL.revokeObjectURL(url);
-    toast('Không đọc được ảnh: ' + fileName);
-  }
-  eraseBusy = false; renderErasePreview();
-}
-$('erase-paste').addEventListener('click', async () => {
-  try {
-    if (!navigator.clipboard?.read) throw new Error('Clipboard read unavailable');
-    const items = await navigator.clipboard.read();
-    const files = [];
-    for (const item of items) {
-      const type = item.types.find(t => t.startsWith('image/'));
-      if (type) files.push(await item.getType(type));
-    }
-    if (files.length) await addEraseFiles(files);
-  } catch (_) { toast('Trình duyệt không cho đọc clipboard, hãy dùng Ctrl+V'); }
-});
-async function eraseInpaint(imageData, maskData, width, height) {
-  const data = imageData.data, mask = maskData.data;
-  const total = width * height;
-  const filled = new Uint8Array(total);
-  let filledCount = 0;
-  for (let i = 0; i < total; i++) {
-    filled[i] = mask[i * 4 + 3] > 10 ? 0 : 1;
-    if (filled[i]) filledCount++;
-  }
-  if (!filledCount) {
-    let r = 0, g = 0, b = 0;
-    for (let i = 0; i < total; i++) { const o = i * 4; r += data[o]; g += data[o + 1]; b += data[o + 2]; }
-    r /= total; g /= total; b /= total;
-    for (let i = 0; i < total; i++) { const o = i * 4; data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255; }
-    return imageData;
-  }
-  const inQueue = new Uint8Array(total);
-  const queue = new Int32Array(total);
-  let qHead = 0, qTail = 0;
-  const hasFilledNeighbor = (x, y) => {
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-      if (filled[ny * width + nx]) return true;
-    }
-    return false;
-  };
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const idx = y * width + x;
-    if (!filled[idx] && hasFilledNeighbor(x, y)) { queue[qTail++] = idx; inQueue[idx] = 1; }
-  }
-  let processed = 0;
-  while (qHead < qTail) {
-    const idx = queue[qHead++];
-    const x = idx % width, y = (idx / width) | 0;
-    let r = 0, g = 0, b = 0, count = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-      const nidx = ny * width + nx;
-      if (!filled[nidx]) continue;
-      const o = nidx * 4;
-      r += data[o]; g += data[o + 1]; b += data[o + 2]; count++;
-    }
-    if (count) {
-      const o = idx * 4;
-      data[o] = r / count; data[o + 1] = g / count; data[o + 2] = b / count; data[o + 3] = 255;
-      filled[idx] = 1;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        if (!dx && !dy) continue;
-        const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-        const nidx = ny * width + nx;
-        if (!filled[nidx] && !inQueue[nidx]) { queue[qTail++] = nidx; inQueue[nidx] = 1; }
-      }
-    }
-    if (++processed % 20000 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-  return imageData;
-}
-$('erase-run').addEventListener('click', async () => {
-  if (eraseBusy || !eraseImg || !eraseStrokes.length) return;
-  eraseBusy = true; renderErasePreview();
-  $('erase-status').textContent = 'Đang xóa…';
-  await new Promise(r => setTimeout(r, 30));
-  try {
-    const w = eraseImg.naturalWidth, h = eraseImg.naturalHeight;
-    const full = document.createElement('canvas'); full.width = w; full.height = h;
-    const fctx = full.getContext('2d');
-    fctx.drawImage(eraseImg, 0, 0, w, h);
-    let bx0 = w, by0 = h, bx1 = 0, by1 = 0;
-    for (const stroke of eraseStrokes) {
-      const half = stroke.size / 2;
-      for (const p of stroke.points) {
-        const px = p.x * w, py = p.y * h;
-        if (px - half < bx0) bx0 = px - half;
-        if (py - half < by0) by0 = py - half;
-        if (px + half > bx1) bx1 = px + half;
-        if (py + half > by1) by1 = py + half;
-      }
-    }
-    const PAD = 48;
-    bx0 = Math.max(0, Math.floor(bx0 - PAD)); by0 = Math.max(0, Math.floor(by0 - PAD));
-    bx1 = Math.min(w, Math.ceil(bx1 + PAD)); by1 = Math.min(h, Math.ceil(by1 + PAD));
-    const bw = Math.max(1, bx1 - bx0), bh = Math.max(1, by1 - by0);
-    const workScale = Math.min(1, 1200 / Math.max(bw, bh));
-    const ww = Math.max(1, Math.round(bw * workScale)), wh = Math.max(1, Math.round(bh * workScale));
-    const work = document.createElement('canvas'); work.width = ww; work.height = wh;
-    const wctx = work.getContext('2d');
-    wctx.drawImage(full, bx0, by0, bw, bh, 0, 0, ww, wh);
-    const imgData = wctx.getImageData(0, 0, ww, wh);
-    const maskCanvas = document.createElement('canvas'); maskCanvas.width = ww; maskCanvas.height = wh;
-    const mctx = maskCanvas.getContext('2d');
-    mctx.fillStyle = 'rgba(255,0,0,1)'; mctx.strokeStyle = 'rgba(255,0,0,1)';
-    mctx.lineCap = 'round'; mctx.lineJoin = 'round';
-    for (const stroke of eraseStrokes) {
-      if (stroke.points.length === 1) {
-        mctx.beginPath();
-        mctx.arc((stroke.points[0].x * w - bx0) * workScale, (stroke.points[0].y * h - by0) * workScale, stroke.size / 2 * workScale, 0, Math.PI * 2);
-        mctx.fill();
-      } else {
-        mctx.lineWidth = stroke.size * workScale;
-        mctx.beginPath();
-        mctx.moveTo((stroke.points[0].x * w - bx0) * workScale, (stroke.points[0].y * h - by0) * workScale);
-        for (let i = 1; i < stroke.points.length; i++) mctx.lineTo((stroke.points[i].x * w - bx0) * workScale, (stroke.points[i].y * h - by0) * workScale);
-        mctx.stroke();
-      }
-    }
-    const maskData = mctx.getImageData(0, 0, ww, wh);
-    const result = await eraseInpaint(imgData, maskData, ww, wh);
-    wctx.putImageData(result, 0, 0);
-    fctx.drawImage(work, 0, 0, ww, wh, bx0, by0, bw, bh);
-    const outCanvas = full;
-    const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png'));
-    const newUrl = URL.createObjectURL(blob), newImg = new Image();
-    await new Promise((resolve, reject) => { newImg.onload = resolve; newImg.onerror = reject; newImg.src = newUrl; });
-    if (eraseUrl) URL.revokeObjectURL(eraseUrl);
-    eraseImg = newImg; eraseUrl = newUrl;
-    eraseStrokes = [];
-    toast('Đã xóa vật thể');
-  } catch (error) {
-    toast('Không xóa được: ' + error.message);
-  }
-  eraseBusy = false; renderErasePreview();
-});
-$('erase-compare').addEventListener('change', () => { renderErasePreview(); });
-$('erase-ask').addEventListener('click', async () => {
-  if (eraseBusy || !eraseImg) return;
-  eraseBusy = true; renderErasePreview();
-  try {
-    const w = eraseImg.naturalWidth, h = eraseImg.naturalHeight;
-    const out = document.createElement('canvas'); out.width = w; out.height = h;
-    out.getContext('2d').drawImage(eraseImg, 0, 0, w, h);
-    const blob = await new Promise(resolve => out.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('Không tạo được ảnh');
-    await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-    window.open('https://muse.ai', '_blank', 'noopener');
-    toast('Đã copy ảnh — paste (Ctrl+V) vào chat để đệ sửa');
-  } catch (error) {
-    toast('Không copy được ảnh: ' + error.message + '. Hãy tải về rồi gửi cho đệ.');
-  }
-  eraseBusy = false; renderErasePreview();
-});
-$('erase-download').addEventListener('click', async () => {
-  if (eraseBusy || !eraseImg) return;
-  eraseBusy = true; renderErasePreview();
-  try {
-    const w = eraseImg.naturalWidth, h = eraseImg.naturalHeight;
-    const out = document.createElement('canvas'); out.width = w; out.height = h;
-    out.getContext('2d').drawImage(eraseImg, 0, 0, w, h);
-    const match = eraseFileName.match(/^(.*)\.([^.]+)$/), stem = match ? match[1] : eraseFileName;
-    const originalExt = match ? match[2].toLowerCase() : 'png';
-    const mime = /^(jpg|jpeg)$/.test(originalExt) ? 'image/jpeg' : originalExt === 'webp' ? 'image/webp' : 'image/png';
-    const blob = await new Promise(resolve => out.toBlob(resolve, mime, .95));
-    if (!blob) throw new Error('Trình duyệt không tạo được ảnh');
-    const ext = blob.type === 'image/jpeg' ? (/^(jpg|jpeg)$/.test(originalExt) ? match[2] : 'jpg') : blob.type === 'image/webp' ? 'webp' : 'png';
-    const url = URL.createObjectURL(blob), link = document.createElement('a');
-    link.href = url; link.download = stem + '-daxoa.' + ext; document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    toast('Đã gửi tải ảnh');
-  } catch (error) { toast('Không xuất được: ' + error.message); }
-  eraseBusy = false; renderErasePreview();
-});
-$('erase-clear').addEventListener('click', () => {
-  if (eraseBusy) return;
-  if (eraseUrl) URL.revokeObjectURL(eraseUrl);
-  eraseImg = null; eraseOriginalImg = null; eraseFileName = ''; eraseUrl = ''; eraseStrokes = [];
-  renderErasePreview();
-});
-renderErasePreview();
 
 renderLogoPreview();
 
