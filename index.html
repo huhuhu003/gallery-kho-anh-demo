@@ -941,7 +941,13 @@ $('logo-panels').addEventListener('input', event => {
 });
 function logoPointer(event, canvas) {
   const rect = canvas.getBoundingClientRect();
-  return {x:(event.clientX-rect.left)/rect.width, y:(event.clientY-rect.top)/rect.height};
+  // Canvas dùng object-fit:contain nên ảnh thật có thể letterbox trong khung CSS
+  // (vd 1 ảnh: panel rộng, cao bị cap 60vh) — phải map về vùng nội dung thật.
+  if (!rect.width || !rect.height || !canvas.width || !canvas.height) return {x:0, y:0};
+  const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
+  const contentW = canvas.width * scale, contentH = canvas.height * scale;
+  const offsetX = (rect.width - contentW) / 2, offsetY = (rect.height - contentH) / 2;
+  return {x:(event.clientX - rect.left - offsetX) / contentW, y:(event.clientY - rect.top - offsetY) / contentH};
 }
 logoPanelEls.forEach(panel => {
   const canvas = panel.querySelector('canvas');
