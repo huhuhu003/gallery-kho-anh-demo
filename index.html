@@ -112,7 +112,7 @@ button.primary:hover{border-color:var(--gold-hover);color:var(--text-white)}
 #erase-tool button,.erase-label{min-height:48px}
 .erase-preview{position:relative;max-width:100%;margin:12px auto;text-align:center}
 #erase-canvas{display:block;width:auto;max-width:100%;height:auto;max-height:60vh;margin:0 auto;object-fit:contain}
-#erase-mask{position:absolute;top:0;left:50%;transform:translateX(-50%);pointer-events:none;touch-action:none}
+#erase-mask{position:absolute;top:0;left:50%;transform:translateX(-50%);pointer-events:auto;touch-action:none;cursor:crosshair}
 #erase-mask.erase-drawing{touch-action:none;cursor:crosshair}
 .erase-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
 .erase-size-row{display:flex;gap:10px;align-items:center}
@@ -1037,7 +1037,8 @@ function renderErasePreview() {
     eraseMaskCtx.strokeStyle = 'rgba(255,0,0,0.4)';
     eraseMaskCtx.lineCap = 'round'; eraseMaskCtx.lineJoin = 'round';
     const scaleRatio = pw / eraseImg.naturalWidth;
-    for (const stroke of eraseStrokes) {
+    const strokesToDraw = eraseCurrentStroke ? [...eraseStrokes, eraseCurrentStroke] : eraseStrokes;
+    for (const stroke of strokesToDraw) {
       if (stroke.points.length === 1) {
         eraseMaskCtx.beginPath();
         eraseMaskCtx.arc(stroke.points[0].x * pw, stroke.points[0].y * ph, stroke.size / 2 * scaleRatio, 0, Math.PI * 2);
