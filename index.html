@@ -1126,36 +1126,65 @@ $('erase-paste').addEventListener('click', async () => {
     if (files.length) await addEraseFiles(files);
   } catch (_) { toast('Trình duyệt không cho đọc clipboard, hãy dùng Ctrl+V'); }
 });
-function eraseInpaint(imageData, maskData, width, height) {
+async function eraseInpaint(imageData, maskData, width, height) {
   const data = imageData.data, mask = maskData.data;
-  const filled = new Uint8Array(width * height);
-  for (let i = 0; i < filled.length; i++) filled[i] = mask[i * 4 + 3] > 10 ? 0 : 1;
-  const RADIUS = 20;
-  for (let iter = 0; iter < 8; iter++) {
-    let changed = false;
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = y * width + x;
-        if (filled[idx]) continue;
-        let r = 0, g = 0, b = 0, count = 0;
-        for (let dy = -RADIUS; dy <= RADIUS; dy++) {
-          for (let dx = -RADIUS; dx <= RADIUS; dx++) {
-            const nx = x + dx, ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-            const nidx = ny * width + nx;
-            if (!filled[nidx]) continue;
-            const o = nidx * 4;
-            r += data[o]; g += data[o + 1]; b += data[o + 2]; count++;
-          }
-        }
-        if (count) {
-          const o = idx * 4;
-          data[o] = r / count; data[o + 1] = g / count; data[o + 2] = b / count; data[o + 3] = 255;
-          filled[idx] = 1; changed = true;
-        }
+  const total = width * height;
+  const filled = new Uint8Array(total);
+  let filledCount = 0;
+  for (let i = 0; i < total; i++) {
+    filled[i] = mask[i * 4 + 3] > 10 ? 0 : 1;
+    if (filled[i]) filledCount++;
+  }
+  if (!filledCount) {
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < total; i++) { const o = i * 4; r += data[o]; g += data[o + 1]; b += data[o + 2]; }
+    r /= total; g /= total; b /= total;
+    for (let i = 0; i < total; i++) { const o = i * 4; data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255; }
+    return imageData;
+  }
+  const inQueue = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  let qHead = 0, qTail = 0;
+  const hasFilledNeighbor = (x, y) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      if (filled[ny * width + nx]) return true;
+    }
+    return false;
+  };
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const idx = y * width + x;
+    if (!filled[idx] && hasFilledNeighbor(x, y)) { queue[qTail++] = idx; inQueue[idx] = 1; }
+  }
+  let processed = 0;
+  while (qHead < qTail) {
+    const idx = queue[qHead++];
+    const x = idx % width, y = (idx / width) | 0;
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const nidx = ny * width + nx;
+      if (!filled[nidx]) continue;
+      const o = nidx * 4;
+      r += data[o]; g += data[o + 1]; b += data[o + 2]; count++;
+    }
+    if (count) {
+      const o = idx * 4;
+      data[o] = r / count; data[o + 1] = g / count; data[o + 2] = b / count; data[o + 3] = 255;
+      filled[idx] = 1;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const nidx = ny * width + nx;
+        if (!filled[nidx] && !inQueue[nidx]) { queue[qTail++] = nidx; inQueue[nidx] = 1; }
       }
     }
-    if (!changed) break;
+    if (++processed % 20000 === 0) await new Promise(r => setTimeout(r, 0));
   }
   return imageData;
 }
@@ -1169,28 +1198,49 @@ $('erase-run').addEventListener('click', async () => {
     const full = document.createElement('canvas'); full.width = w; full.height = h;
     const fctx = full.getContext('2d');
     fctx.drawImage(eraseImg, 0, 0, w, h);
-    const imgData = fctx.getImageData(0, 0, w, h);
-    const maskCanvas = document.createElement('canvas'); maskCanvas.width = w; maskCanvas.height = h;
+    let bx0 = w, by0 = h, bx1 = 0, by1 = 0;
+    for (const stroke of eraseStrokes) {
+      const half = stroke.size / 2;
+      for (const p of stroke.points) {
+        const px = p.x * w, py = p.y * h;
+        if (px - half < bx0) bx0 = px - half;
+        if (py - half < by0) by0 = py - half;
+        if (px + half > bx1) bx1 = px + half;
+        if (py + half > by1) by1 = py + half;
+      }
+    }
+    const PAD = 48;
+    bx0 = Math.max(0, Math.floor(bx0 - PAD)); by0 = Math.max(0, Math.floor(by0 - PAD));
+    bx1 = Math.min(w, Math.ceil(bx1 + PAD)); by1 = Math.min(h, Math.ceil(by1 + PAD));
+    const bw = Math.max(1, bx1 - bx0), bh = Math.max(1, by1 - by0);
+    const workScale = Math.min(1, 1200 / Math.max(bw, bh));
+    const ww = Math.max(1, Math.round(bw * workScale)), wh = Math.max(1, Math.round(bh * workScale));
+    const work = document.createElement('canvas'); work.width = ww; work.height = wh;
+    const wctx = work.getContext('2d');
+    wctx.drawImage(full, bx0, by0, bw, bh, 0, 0, ww, wh);
+    const imgData = wctx.getImageData(0, 0, ww, wh);
+    const maskCanvas = document.createElement('canvas'); maskCanvas.width = ww; maskCanvas.height = wh;
     const mctx = maskCanvas.getContext('2d');
     mctx.fillStyle = 'rgba(255,0,0,1)'; mctx.strokeStyle = 'rgba(255,0,0,1)';
     mctx.lineCap = 'round'; mctx.lineJoin = 'round';
     for (const stroke of eraseStrokes) {
       if (stroke.points.length === 1) {
         mctx.beginPath();
-        mctx.arc(stroke.points[0].x * w, stroke.points[0].y * h, stroke.size / 2, 0, Math.PI * 2);
+        mctx.arc((stroke.points[0].x * w - bx0) * workScale, (stroke.points[0].y * h - by0) * workScale, stroke.size / 2 * workScale, 0, Math.PI * 2);
         mctx.fill();
       } else {
-        mctx.lineWidth = stroke.size;
+        mctx.lineWidth = stroke.size * workScale;
         mctx.beginPath();
-        mctx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
-        for (let i = 1; i < stroke.points.length; i++) mctx.lineTo(stroke.points[i].x * w, stroke.points[i].y * h);
+        mctx.moveTo((stroke.points[0].x * w - bx0) * workScale, (stroke.points[0].y * h - by0) * workScale);
+        for (let i = 1; i < stroke.points.length; i++) mctx.lineTo((stroke.points[i].x * w - bx0) * workScale, (stroke.points[i].y * h - by0) * workScale);
         mctx.stroke();
       }
     }
-    const maskData = mctx.getImageData(0, 0, w, h);
-    const result = eraseInpaint(imgData, maskData, w, h);
-    const outCanvas = document.createElement('canvas'); outCanvas.width = w; outCanvas.height = h;
-    outCanvas.getContext('2d').putImageData(result, 0, 0);
+    const maskData = mctx.getImageData(0, 0, ww, wh);
+    const result = await eraseInpaint(imgData, maskData, ww, wh);
+    wctx.putImageData(result, 0, 0);
+    fctx.drawImage(work, 0, 0, ww, wh, bx0, by0, bw, bh);
+    const outCanvas = full;
     const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png'));
     const newUrl = URL.createObjectURL(blob), newImg = new Image();
     await new Promise((resolve, reject) => { newImg.onload = resolve; newImg.onerror = reject; newImg.src = newUrl; });
