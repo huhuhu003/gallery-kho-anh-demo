@@ -222,6 +222,15 @@ body:has(#nav-sidebar.open) #nav-fab{left:min(280px,86vw)}
 .nav-foot{margin-top:auto;padding:18px 20px;font-size:11px;letter-spacing:.1em;color:#96a4b8}
 @media(max-width:480px){#nav-sidebar{width:260px}}
 
+/* Circular theme reveal: scoped to theme changes only. */
+html.theme-revealing *,html.theme-revealing *::before,html.theme-revealing *::after{transition:none!important}
+html.theme-revealing::view-transition-old(root),html.theme-revealing::view-transition-new(root){animation:none;mix-blend-mode:normal}
+html.theme-revealing::view-transition-old(root){z-index:1}
+html.theme-revealing::view-transition-new(root){z-index:2;animation:theme-circle-reveal 600ms cubic-bezier(.4,0,.2,1) both}
+.theme-reveal-overlay{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;animation:theme-circle-reveal 600ms cubic-bezier(.4,0,.2,1) both}
+.theme-reveal-overlay>body{position:absolute;left:0;margin:0;width:100%;min-height:100vh}
+@keyframes theme-circle-reveal{from{clip-path:circle(0px at var(--theme-x) var(--theme-y))}to{clip-path:circle(var(--theme-radius) at var(--theme-x) var(--theme-y))}}
+
 /* ===== 7. DARK MODE: switch truot + chuyen mau muot ===== */
 body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolbar,.card,.photo,.modal,button,input,.option,.option small,.filename,.price,.muted,.toast,.brand-icon rect{transition:background-color .4s ease,color .4s ease,border-color .4s ease,fill .4s ease}
 #theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:linear-gradient(180deg,var(--gold-subtle),var(--bg-cream));overflow:hidden;transition:background .4s ease,border-color .4s ease}
@@ -424,12 +433,84 @@ function updateThemeToggle() {
   $('theme-toggle').title = label;
 }
 updateThemeToggle();
-$('theme-toggle').addEventListener('click',() => {
-  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = theme;
-  try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
-  updateThemeToggle();
-});
+let themeRevealBusy = false;
+async function revealTheme(event) {
+  if (themeRevealBusy) return;
+  const root = document.documentElement;
+  const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  const applyTheme = () => {
+    root.dataset.theme = theme;
+    try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
+    updateThemeToggle();
+    const label = $('nav-theme-label');
+    if (label) label.textContent = theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    applyTheme();
+    return;
+  }
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = event.detail > 0 ? event.clientX : rect.left + rect.width / 2;
+  const y = event.detail > 0 ? event.clientY : rect.top + rect.height / 2;
+  const radius = Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
+  root.style.setProperty('--theme-x',x+'px');
+  root.style.setProperty('--theme-y',y+'px');
+  root.style.setProperty('--theme-radius',Math.ceil(radius)+'px');
+  themeRevealBusy = true;
+  root.classList.add('theme-revealing');
+  let overlay;
+  try {
+    if (typeof document.startViewTransition === 'function') {
+      const transition = document.startViewTransition(applyTheme);
+      await transition.finished;
+    } else {
+      // Render a temporary inert copy in the new palette over the current page.
+      const previousTheme = root.dataset.theme;
+      root.dataset.theme = theme;
+      overlay = document.createElement('div');
+      overlay.className = 'theme-reveal-overlay';
+      overlay.dataset.theme = theme;
+      overlay.inert = true;
+      overlay.setAttribute('aria-hidden','true');
+      const palette = getComputedStyle(root);
+      for (const property of palette) {
+        if (property.startsWith('--')) overlay.style.setProperty(property,palette.getPropertyValue(property));
+      }
+      const snapshot = document.body.cloneNode(true);
+      snapshot.querySelectorAll('script').forEach(node => node.remove());
+      snapshot.style.top = -window.scrollY+'px';
+      snapshot.style.left = -window.scrollX+'px';
+      snapshot.style.width = document.body.getBoundingClientRect().width+'px';
+      // Isolate theme selectors and duplicate IDs from the live document.
+      const shadow = overlay.attachShadow({mode:'closed'});
+      const styles = document.createElement('style');
+      styles.textContent = Array.from(document.querySelectorAll('style'),node => node.textContent).join('\n');
+      const surface = document.createElement('div');
+      surface.dataset.theme = theme;
+      snapshot.style.position = 'absolute';
+      snapshot.style.margin = '0';
+      surface.appendChild(snapshot);
+      shadow.append(styles,surface);
+      if (previousTheme === undefined) delete root.dataset.theme;
+      else root.dataset.theme = previousTheme;
+      document.body.appendChild(overlay);
+      await new Promise(resolve => {
+        overlay.addEventListener('animationend',e => { if (e.target === overlay) resolve(); });
+        setTimeout(resolve,750);
+      });
+      applyTheme();
+    }
+  } catch (_) {
+    applyTheme();
+  } finally {
+    overlay?.remove();
+    root.classList.remove('theme-revealing');
+    ['--theme-x','--theme-y','--theme-radius'].forEach(property => root.style.removeProperty(property));
+    themeRevealBusy = false;
+  }
+}
+$('theme-toggle').addEventListener('click',revealTheme);
+
 (function(){
   const fab = $('nav-fab'), sidebar = $('nav-sidebar'), backdrop = $('nav-backdrop');
   function syncNavThemeLabel(){
@@ -463,7 +544,7 @@ $('theme-toggle').addEventListener('click',() => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebar.classList.contains('open')) closeNav(); });
   $('nav-home').addEventListener('click', e => { e.preventDefault(); showLogoTool(false); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
   $('nav-logo').addEventListener('click', () => { showLogoTool(true); closeNav(); window.scrollTo({top:0,behavior:'smooth'}); });
-  $('nav-theme').addEventListener('click', () => { $('theme-toggle').click(); syncNavThemeLabel(); });
+  $('nav-theme').addEventListener('click',revealTheme);
   syncNavThemeLabel();
 })();
 (function(){
