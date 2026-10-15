@@ -222,7 +222,43 @@ body:has(#nav-sidebar.open) #nav-fab{left:min(280px,86vw)}
 .nav-foot{margin-top:auto;padding:18px 20px;font-size:11px;letter-spacing:.1em;color:#96a4b8}
 @media(max-width:480px){#nav-sidebar{width:260px}}
 
-::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;display:block}html.theme-changing,html.theme-changing *,html.theme-changing *::before,html.theme-changing *::after{transition:none!important}html.theme-to-dark::view-transition-old(root),html.theme-to-light::view-transition-new(root){z-index:1}html.theme-to-dark::view-transition-new(root),html.theme-to-light::view-transition-old(root){z-index:9999}.theme-snapshot{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;background:var(--bg-body);will-change:clip-path}.theme-snapshot *,.theme-snapshot *::before,.theme-snapshot *::after{animation:none!important;transition:none!important}#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:var(--bg-cream)}#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--gold-primary);box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .35s cubic-bezier(.34,1.4,.44,1)}[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px)}
+/* ===== TELEGRAM CIRCULAR THEME REVEAL (60FPS GPU OPTIMIZED) ===== */
+::view-transition-group(root),
+::view-transition-image-pair(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+  mix-blend-mode: normal !important;
+  display: block;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+  will-change: clip-path;
+}
+html.theme-changing,
+html.theme-changing *,
+html.theme-changing *::before,
+html.theme-changing *::after {
+  transition: none !important;
+  animation: none !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
+/* Tắt các thuộc tính ngốn GPU gây khựng khi chụp snapshot View Transition */
+html.theme-changing header,
+html.theme-changing .option:has(input:checked) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.theme-changing .card {
+  content-visibility: visible !important;
+  contain: none !important;
+  transform: none !important;
+}
+#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:var(--bg-cream)}#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--gold-primary);box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .35s cubic-bezier(.34,1.4,.44,1)}[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px)}
 
 /* ===== 9. CHAM CONG: ngay + nut ON/OFF + dem gio ===== */
 .chamcong{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:8px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:9999px;background:var(--bg-surface);font-size:12px;color:var(--text-secondary);transition:border-color .3s ease,box-shadow .3s ease}
@@ -417,34 +453,60 @@ updateThemeToggle();
 let themeBusy = false;
 async function revealTheme(event) {
   if (themeBusy) return;
-  const root = document.documentElement, next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  const root = document.documentElement;
+  const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+
   const apply = () => {
     root.dataset.theme = next;
     try { localStorage.setItem('gallery_theme', next); } catch (_) {}
     updateThemeToggle();
-    if ($('nav-theme-label')) $('nav-theme-label').textContent = next === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
+    const label = document.getElementById('nav-theme-label');
+    if (label) label.textContent = next === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
   };
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
-  const rect = (event?.currentTarget || $('theme-toggle')).getBoundingClientRect();
-  const x = event?.clientX || (rect.left + rect.width / 2), y = event?.clientY || (rect.top + rect.height / 2);
-  const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  const c0 = `circle(0px at ${x}px ${y}px)`, c1 = `circle(${r}px at ${x}px ${y}px)`;
-  const timing = { duration: 520, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' };
-  const dir = next === 'dark' ? 'theme-to-dark' : 'theme-to-light';
-  themeBusy = true; root.classList.add('theme-changing', dir);
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !document.startViewTransition) {
+    apply();
+    return;
+  }
+
+  const btn = event?.currentTarget || document.getElementById('theme-toggle');
+  const rect = btn.getBoundingClientRect();
+  const x = Math.round(event?.clientX || (rect.left + rect.width / 2));
+  const y = Math.round(event?.clientY || (rect.top + rect.height / 2));
+  const endRadius = Math.ceil(Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)));
+
+  themeBusy = true;
+  root.classList.add('theme-changing');
+
   try {
-    if (document.startViewTransition) {
-      const vt = document.startViewTransition(apply); await vt.ready;
-      await root.animate({ clipPath: next === 'dark' ? [c0, c1] : [c1, c0] }, { ...timing, pseudoElement: next === 'dark' ? '::view-transition-new(root)' : '::view-transition-old(root)' }).finished;
-      await vt.finished;
-    } else {
-      const snap = document.createElement('div'); snap.className = 'theme-snapshot'; snap.inert = true;
-      const clone = document.body.cloneNode(true); clone.querySelectorAll('script').forEach(s => s.remove());
-      const cs = getComputedStyle(root); for (const p of cs) if (p.startsWith('--')) snap.style.setProperty(p, cs.getPropertyValue(p));
-      snap.dataset.theme = root.dataset.theme || 'light'; snap.append(clone); document.body.append(snap);
-      apply(); await snap.animate({ clipPath: [c1, c0] }, timing).finished; snap.remove();
-    }
-  } catch (_) { apply(); } finally { root.classList.remove('theme-changing', dir); themeBusy = false; }
+    const vt = document.startViewTransition(() => {
+      apply();
+    });
+    await vt.ready;
+
+    // Luôn bung lớp giao diện mới từ tâm nút bấm ra toàn màn hình với đường cong mượt tức thì
+    const anim = root.animate(
+      {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${endRadius}px at ${x}px ${y}px)`
+        ]
+      },
+      {
+        duration: 450,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'forwards',
+        pseudoElement: '::view-transition-new(root)'
+      }
+    );
+    await anim.finished;
+    await vt.finished;
+  } catch (_) {
+    apply();
+  } finally {
+    root.classList.remove('theme-changing');
+    themeBusy = false;
+  }
 }
 $('theme-toggle').addEventListener('click',revealTheme);
 
