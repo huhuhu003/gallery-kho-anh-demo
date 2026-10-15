@@ -227,9 +227,36 @@ html.theme-revealing *,html.theme-revealing *::before,html.theme-revealing *::af
 html.theme-revealing::view-transition-old(root),html.theme-revealing::view-transition-new(root){animation:none;mix-blend-mode:normal}
 html.theme-revealing::view-transition-old(root){z-index:1}
 html.theme-revealing::view-transition-new(root){z-index:2;animation:theme-circle-reveal 600ms cubic-bezier(.4,0,.2,1) both}
-.theme-reveal-overlay{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;animation:theme-circle-reveal 600ms cubic-bezier(.4,0,.2,1) both}
+.theme-reveal-overlay{position:fixed;inset:0;z-index:2147483646;overflow:hidden;pointer-events:none;animation:theme-circle-reveal 600ms cubic-bezier(.4,0,.2,1) both}
 .theme-reveal-overlay>body{position:absolute;left:0;margin:0;width:100%;min-height:100vh}
 @keyframes theme-circle-reveal{from{clip-path:circle(0px at var(--theme-x) var(--theme-y))}to{clip-path:circle(var(--theme-radius) at var(--theme-x) var(--theme-y))}}
+
+/* Sun/moon decoration: independent from the circular palette reveal. */
+.theme-sky{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden;--sky-size:clamp(28px,4vw,46px);--sky-right: max(18px,env(safe-area-inset-right));--sky-top: max(112px,calc(env(safe-area-inset-top) + 100px))}
+.sky-body{position:absolute;right:var(--sky-right);top:var(--sky-top);width:var(--sky-size);height:var(--sky-size);opacity:0}
+.sky-sun{view-transition-name:sky-sun;color:#ffb52e}
+.sky-sun svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 7px #ffba4455)}
+.sky-moon{view-transition-name:sky-moon;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fffde5,#eee1a3);box-shadow:0 0 16px #fff0b533}
+.sky-moon::before{content:"";position:absolute;inset:25% 20% 45% 50%;border-radius:50%;background:#cbbc8240;box-shadow:-12px 13px 0 -2px #cbbc8240}
+.sky-moon::after{content:"✦";position:absolute;right:110%;top:-12px;color:#e9dba4;font-size:14px;text-shadow:20px 58px #e9dba4,-16px 24px #e9dba4}
+.theme-sky[data-sky="light"] .sky-sun,.theme-sky[data-sky="dark"] .sky-moon{opacity:1}
+.theme-sky.sky-to-light .sky-sun{animation:sky-sun-arc 1350ms cubic-bezier(.35,0,.25,1) both}
+.theme-sky.sky-to-light .sky-moon{animation:sky-set 450ms ease-in both}
+.theme-sky.sky-to-dark .sky-sun{animation:sky-set 550ms ease-in both}
+.theme-sky.sky-to-dark .sky-moon{animation:sky-rise 1350ms cubic-bezier(.22,1,.36,1) both}
+@keyframes sky-sun-arc{0%{opacity:0;transform:translate(calc(-100vw + var(--sky-right) + var(--sky-size)),65px) rotate(-60deg)}12%{opacity:1}28%{transform:translate(calc(-70vw + var(--sky-right)), -55px) rotate(-35deg)}55%{transform:translate(-42vw,-85px)}78%{transform:translate(-18vw,-55px) rotate(20deg)}100%{opacity:1;transform:translate(0,0) rotate(0deg)}}
+@keyframes sky-set{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(100px)}}
+@keyframes sky-rise{0%,35%{opacity:0;transform:translateY(100px)}60%{opacity:1}100%{opacity:1;transform:translateY(0)}}
+/* Named snapshots keep the celestial bodies above the native circle snapshot. */
+html::view-transition-group(sky-sun),html::view-transition-group(sky-moon){z-index:3;animation:none;left:auto;right:max(18px,env(safe-area-inset-right));top:max(112px,calc(env(safe-area-inset-top) + 100px));width:clamp(28px,4vw,46px);height:clamp(28px,4vw,46px);transform:none}
+html::view-transition-old(sky-sun),html::view-transition-old(sky-moon){display:none}
+html::view-transition-new(sky-sun),html::view-transition-new(sky-moon){mix-blend-mode:normal;animation:none;overflow:visible}
+html.sky-to-light::view-transition-group(sky-sun){animation:sky-sun-arc 1350ms cubic-bezier(.35,0,.25,1) both}
+html.sky-to-light::view-transition-group(sky-moon){animation:sky-set 450ms ease-in both}
+html.sky-to-dark::view-transition-group(sky-sun){animation:sky-set 550ms ease-in both}
+html.sky-to-dark::view-transition-group(sky-moon){animation:sky-rise 1350ms cubic-bezier(.22,1,.36,1) both}
+html::view-transition{--sky-size:clamp(28px,4vw,46px);--sky-right:max(18px,env(safe-area-inset-right))}
+@media(prefers-reduced-motion:reduce){.theme-sky .sky-body{animation:none!important}}
 
 /* ===== 7. DARK MODE: switch truot + chuyen mau muot ===== */
 body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolbar,.card,.photo,.modal,button,input,.option,.option small,.filename,.price,.muted,.toast,.brand-icon rect{transition:background-color .4s ease,color .4s ease,border-color .4s ease,fill .4s ease}
@@ -433,6 +460,12 @@ function updateThemeToggle() {
   $('theme-toggle').title = label;
 }
 updateThemeToggle();
+const themeSky = document.createElement('div');
+themeSky.className = 'theme-sky';
+themeSky.setAttribute('aria-hidden','true');
+themeSky.dataset.sky = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+themeSky.innerHTML = '<div class="sky-body sky-sun"><svg viewBox="0 0 48 48" fill="none"><g stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M24 2v5m0 34v5M2 24h5m34 0h5M8.5 8.5l3.5 3.5m24 24 3.5 3.5M8.5 39.5 12 36m24-24 3.5-3.5"/></g><circle cx="24" cy="24" r="13" fill="#ffb52e"/><circle cx="21" cy="20" r="9" fill="#ffd364"/></svg></div><div class="sky-body sky-moon"></div>';
+document.body.appendChild(themeSky);
 let themeRevealBusy = false;
 async function revealTheme(event) {
   if (themeRevealBusy) return;
@@ -442,6 +475,7 @@ async function revealTheme(event) {
     root.dataset.theme = theme;
     try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
     updateThemeToggle();
+    themeSky.dataset.sky = theme;
     const label = $('nav-theme-label');
     if (label) label.textContent = theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
   };
@@ -459,9 +493,20 @@ async function revealTheme(event) {
   themeRevealBusy = true;
   root.classList.add('theme-revealing');
   let overlay;
+  const skyClass = 'sky-to-' + theme;
+  const skyFinished = new Promise(resolve => setTimeout(resolve,1400));
+  // Keep both bodies opaque in snapshots; the CSS keyframes control visibility.
+  const startSky = () => {
+    themeSky.dataset.sky = theme;
+    themeSky.classList.add(skyClass);
+  };
   try {
     if (typeof document.startViewTransition === 'function') {
-      const transition = document.startViewTransition(applyTheme);
+      root.classList.add(skyClass);
+      const transition = document.startViewTransition(() => {
+        applyTheme();
+        themeSky.querySelectorAll('.sky-body').forEach(body => { body.style.opacity = '1'; });
+      });
       await transition.finished;
     } else {
       // Render a temporary inert copy in the new palette over the current page.
@@ -477,7 +522,7 @@ async function revealTheme(event) {
         if (property.startsWith('--')) overlay.style.setProperty(property,palette.getPropertyValue(property));
       }
       const snapshot = document.body.cloneNode(true);
-      snapshot.querySelectorAll('script').forEach(node => node.remove());
+      snapshot.querySelectorAll('script,.theme-sky').forEach(node => node.remove());
       snapshot.style.top = -window.scrollY+'px';
       snapshot.style.left = -window.scrollX+'px';
       snapshot.style.width = document.body.getBoundingClientRect().width+'px';
@@ -494,6 +539,7 @@ async function revealTheme(event) {
       if (previousTheme === undefined) delete root.dataset.theme;
       else root.dataset.theme = previousTheme;
       document.body.appendChild(overlay);
+      startSky();
       await new Promise(resolve => {
         overlay.addEventListener('animationend',e => { if (e.target === overlay) resolve(); });
         setTimeout(resolve,750);
@@ -506,6 +552,10 @@ async function revealTheme(event) {
     overlay?.remove();
     root.classList.remove('theme-revealing');
     ['--theme-x','--theme-y','--theme-radius'].forEach(property => root.style.removeProperty(property));
+    await skyFinished;
+    themeSky.classList.remove(skyClass);
+    root.classList.remove(skyClass);
+    themeSky.querySelectorAll('.sky-body').forEach(body => { body.style.opacity = ''; });
     themeRevealBusy = false;
   }
 }
