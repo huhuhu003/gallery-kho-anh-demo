@@ -222,27 +222,16 @@ body:has(#nav-sidebar.open) #nav-fab{left:min(280px,86vw)}
 .nav-foot{margin-top:auto;padding:18px 20px;font-size:11px;letter-spacing:.1em;color:#96a4b8}
 @media(max-width:480px){#nav-sidebar{width:260px}}
 
-/* Header-only sun/moon pulse; transform and opacity only, removed after 460ms. */
-.theme-sky{position:absolute;top:50%;width:64px;height:64px;margin-top:-32px;overflow:hidden;contain:paint;pointer-events:none;z-index:1}
-.sky-body{position:absolute;left:20px;top:20px;width:24px;height:24px;opacity:0;transform-origin:center;animation:sky-pulse 460ms cubic-bezier(.2,.7,.3,1) both}
-.sky-sun{border-radius:50%;background:#ef1731;--sky-flash-color:#ffb49d}
-.sky-moon{border-radius:0 100% 100% 0;left:26px;width:12px;background:#167de8;--sky-flash-color:#071c48}
-.sky-body::after{content:"";position:absolute;inset:-5px;border-radius:inherit;background:var(--sky-flash-color);opacity:0;animation:sky-flash 460ms ease-out both}
-@keyframes sky-pulse{0%{opacity:0;transform:translateY(9px) scale(.35)}18%{opacity:1;transform:translateY(0) scale(1)}48%{opacity:1;transform:translateY(0) scale(1.5)}100%{opacity:0;transform:translateY(14px) scale(.15)}}
-@keyframes sky-flash{0%,22%,100%{opacity:0;transform:scale(.8)}48%{opacity:.8;transform:scale(1.35)}75%{opacity:0;transform:scale(1.6)}}
-@media(prefers-reduced-motion:reduce){.theme-sky{display:none}}
-
-/* ===== 7. DARK MODE: switch truot + chuyen mau muot ===== */
-body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolbar,.card,.photo,.modal,button,input,.option,.option small,.filename,.price,.muted,.toast,.brand-icon rect{transition:background-color .4s ease,color .4s ease,border-color .4s ease,fill .4s ease}
-#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:linear-gradient(180deg,var(--gold-subtle),var(--bg-cream));overflow:hidden;transition:background .4s ease,border-color .4s ease}
-#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--gold-light),var(--gold-primary));box-shadow:0 2px 6px rgba(0,0,0,.28);display:grid;place-items:center;transition:transform .45s cubic-bezier(.34,1.4,.44,1),background .4s ease}
-#theme-toggle .theme-icon{position:absolute;width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:opacity .3s ease,transform .45s ease}
-#theme-toggle .theme-sun{opacity:1;transform:rotate(0) scale(1)}
-#theme-toggle .theme-moon{opacity:0;transform:rotate(90deg) scale(.5)}
-[data-theme="dark"] #theme-toggle{background:linear-gradient(180deg,#0d1728,#1a2b4a)}
-[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px);background:radial-gradient(circle at 35% 35%,#33475f,#101d33)}
-[data-theme="dark"] #theme-toggle .theme-sun{opacity:0;transform:rotate(-90deg) scale(.5)}
-[data-theme="dark"] #theme-toggle .theme-moon{opacity:1;transform:rotate(0) scale(1)}
+/* Telegram-style circular theme reveal. */
+html.theme-changing *,html.theme-changing *::before,html.theme-changing *::after{transition:none!important}
+html.theme-changing::view-transition-old(root),html.theme-changing::view-transition-new(root){animation:none;mix-blend-mode:normal}
+html.theme-changing::view-transition-old(root){z-index:1}
+html.theme-changing::view-transition-new(root){z-index:2}
+.theme-snapshot{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;background:var(--bg-body)}
+.theme-snapshot *,.theme-snapshot *::before,.theme-snapshot *::after{animation:none!important;transition:none!important}
+#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:var(--bg-cream)}
+#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--gold-primary);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px)}
 
 /* ===== 9. CHAM CONG: ngay + nut ON/OFF + dem gio ===== */
 .chamcong{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:8px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:9999px;background:var(--bg-surface);font-size:12px;color:var(--text-secondary);transition:border-color .3s ease,box-shadow .3s ease}
@@ -306,7 +295,7 @@ body,header,.announcement,.container,.login,.filters,.filter-body,.group,.toolba
 <span id="cc-timer" hidden>00:00:00</span>
 <span id="cc-total"></span>
 <button id="cc-toggle" type="button" aria-pressed="false">ON</button>
-</div><div class="actions"><button id="theme-toggle" type="button" aria-label="Chuyển sang chế độ tối" aria-pressed="false" title="Chuyển sang chế độ tối"><span class="sw-knob"><svg class="theme-icon theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="theme-icon theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.3A9 9 0 0 1 10.7 3.5a9 9 0 1 0 9.8 9.8Z"/></svg></span></button><button id="settings-button">Cài đặt</button><button id="logout" hidden>Đăng xuất</button></div></header>
+</div><div class="actions"><button id="theme-toggle" type="button" aria-label="Chuyển sang chế độ tối" aria-pressed="false" title="Chuyển sang chế độ tối"><span class="sw-knob"></span></button><button id="settings-button">Cài đặt</button><button id="logout" hidden>Đăng xuất</button></div></header>
 <section class="login" id="login" hidden><h1>Kho ảnh của bạn</h1><p>Khám phá toàn bộ ảnh sản phẩm. Chọn hãng, danh mục và khoảng giá để tìm đúng món bạn cần.</p><button class="primary" id="login-button" disabled>Đang chuẩn bị đăng nhập…</button><p class="muted" id="login-message">Ứng dụng chỉ đọc Google Drive. Phiên đăng nhập chỉ được giữ trong bộ nhớ.</p></section>
 <main class="container">
 <div id="gallery">
@@ -434,41 +423,71 @@ function updateThemeToggle() {
   $('theme-toggle').title = label;
 }
 updateThemeToggle();
-let clearThemeSky = () => {};
-function revealTheme() {
+let themeBusy = false;
+async function revealTheme(event) {
+  if (themeBusy) return;
   const root = document.documentElement;
   const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-  root.dataset.theme = theme;
-  try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
-  updateThemeToggle();
-  const label = $('nav-theme-label');
-  if (label) label.textContent = theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
-  clearThemeSky();
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const header = document.querySelector('header');
-  const themeSky = document.createElement('div');
-  themeSky.className = 'theme-sky';
-  themeSky.setAttribute('aria-hidden','true');
-  const body = document.createElement('div');
-  body.className = 'sky-body sky-' + (theme === 'light' ? 'sun' : 'moon');
-  themeSky.appendChild(body);
-  const headerRect = header.getBoundingClientRect();
-  const toggleRect = $('theme-toggle').getBoundingClientRect();
-  themeSky.style.left = Math.max(0,Math.min(headerRect.width - 64,toggleRect.left - headerRect.left - 66)) + 'px';
-  const cleanup = () => {
-    clearTimeout(timer);
-    body.removeEventListener('animationend',onEnd);
-    body.removeEventListener('animationcancel',onEnd);
-    themeSky.remove();
-    if (clearThemeSky === cleanup) clearThemeSky = () => {};
+  const apply = () => {
+    root.dataset.theme = theme;
+    try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
+    updateThemeToggle();
+    $('nav-theme-label').textContent = theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
   };
-  const onEnd = event => { if (event.target === body && event.animationName === 'sky-pulse') cleanup(); };
-  const timer = setTimeout(cleanup,460);
-  clearThemeSky = cleanup;
-  body.addEventListener('animationend',onEnd);
-  body.addEventListener('animationcancel',onEnd);
-  header.appendChild(themeSky);
+  const rect = (event?.currentTarget || $('theme-toggle')).getBoundingClientRect();
+  const x = event?.detail > 0 ? event.clientX : rect.left + rect.width / 2;
+  const y = event?.detail > 0 ? event.clientY : rect.top + rect.height / 2;
+  const radius = Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y)) + 2;
+  const timing = {duration:560,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'};
+  themeBusy = true;
+  root.classList.add('theme-changing');
+  let snapshot, transition;
+  try {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
+    if (typeof document.startViewTransition === 'function') {
+      transition = document.startViewTransition(apply);
+      // Observe completion even if ready rejects (e.g. a hidden document).
+      transition.finished.catch(() => {});
+      await transition.ready;
+      await root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${radius}px at ${x}px ${y}px)`]},
+        {...timing,pseudoElement:'::view-transition-new(root)'}).finished;
+      await transition.finished;
+    } else {
+      // Keep the old page above the live new theme; expand a circular hole in it.
+      snapshot = document.createElement('div');
+      snapshot.className = 'theme-snapshot';
+      snapshot.setAttribute('aria-hidden','true');
+      snapshot.inert = true;
+      const oldBody = document.body.cloneNode(true);
+      const colors = getComputedStyle(root);
+      for (const name of colors) if (name.startsWith('--')) snapshot.style.setProperty(name,colors.getPropertyValue(name));
+      snapshot.dataset.theme = root.dataset.theme || 'light';
+      snapshot.style.colorScheme = colors.colorScheme;
+      oldBody.querySelectorAll('script').forEach(script => script.remove());
+      snapshot.append(oldBody);
+      document.body.append(snapshot);
+      snapshot.scrollTop = scrollY;
+      snapshot.scrollLeft = scrollX;
+      const hole = r => {
+        const points = ['0px 0px',`${innerWidth}px 0px`,`${innerWidth}px ${innerHeight}px`,`0px ${innerHeight}px`,'0px 0px'];
+        for (let i=0;i<=96;i++) {
+          const angle = i / 96 * Math.PI * 2;
+          points.push(`${x + Math.cos(angle)*r}px ${y + Math.sin(angle)*r}px`);
+        }
+        return `polygon(evenodd,${points.join(',')})`;
+      };
+      snapshot.style.clipPath = hole(0);
+      apply();
+      await snapshot.animate({clipPath:[hole(0),hole(radius)]},timing).finished;
+    }
+  } catch (_) {
+    transition?.skipTransition();
+    apply();
+  } finally {
+    snapshot?.remove();
+    root.classList.remove('theme-changing');
+    themeBusy = false;
+  }
 }
 $('theme-toggle').addEventListener('click',revealTheme);
 
