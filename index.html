@@ -222,17 +222,7 @@ body:has(#nav-sidebar.open) #nav-fab{left:min(280px,86vw)}
 .nav-foot{margin-top:auto;padding:18px 20px;font-size:11px;letter-spacing:.1em;color:#96a4b8}
 @media(max-width:480px){#nav-sidebar{width:260px}}
 
-/* Telegram-style circular theme reveal. */
-html.theme-changing *,html.theme-changing *::before,html.theme-changing *::after{transition:none!important}
-html.theme-changing::view-transition-old(root),html.theme-changing::view-transition-new(root){animation:none;mix-blend-mode:normal}
-html.theme-changing::view-transition-group(root){animation:none}
-html.theme-changing::view-transition-old(root){z-index:3}
-html.theme-changing::view-transition-new(root){z-index:2;clip-path:circle(0px at var(--tx,50%) var(--ty,50%))}
-.theme-snapshot{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;background:var(--bg-body)}
-.theme-snapshot *,.theme-snapshot *::before,.theme-snapshot *::after{animation:none!important;transition:none!important}
-#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:var(--bg-cream)}
-#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--gold-primary);box-shadow:0 2px 6px rgba(0,0,0,.2)}
-[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px)}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;display:block}html.theme-changing,html.theme-changing *,html.theme-changing *::before,html.theme-changing *::after{transition:none!important}html.theme-to-dark::view-transition-old(root),html.theme-to-light::view-transition-new(root){z-index:1}html.theme-to-dark::view-transition-new(root),html.theme-to-light::view-transition-old(root){z-index:9999}.theme-snapshot{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;background:var(--bg-body);will-change:clip-path}.theme-snapshot *,.theme-snapshot *::before,.theme-snapshot *::after{animation:none!important;transition:none!important}#theme-toggle{position:relative;width:62px;height:32px;flex:none;padding:0;border-radius:9999px;border:1px solid var(--border-subtle);background:var(--bg-cream)}#theme-toggle .sw-knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--gold-primary);box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .35s cubic-bezier(.34,1.4,.44,1)}[data-theme="dark"] #theme-toggle .sw-knob{transform:translateX(30px)}
 
 /* ===== 9. CHAM CONG: ngay + nut ON/OFF + dem gio ===== */
 .chamcong{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:8px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:9999px;background:var(--bg-surface);font-size:12px;color:var(--text-secondary);transition:border-color .3s ease,box-shadow .3s ease}
@@ -427,74 +417,34 @@ updateThemeToggle();
 let themeBusy = false;
 async function revealTheme(event) {
   if (themeBusy) return;
-  const root = document.documentElement;
-  const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  const root = document.documentElement, next = root.dataset.theme === 'dark' ? 'light' : 'dark';
   const apply = () => {
-    root.dataset.theme = theme;
-    try { localStorage.setItem('gallery_theme',theme); } catch (_) {}
+    root.dataset.theme = next;
+    try { localStorage.setItem('gallery_theme', next); } catch (_) {}
     updateThemeToggle();
-    $('nav-theme-label').textContent = theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
+    if ($('nav-theme-label')) $('nav-theme-label').textContent = next === 'dark' ? 'Chế độ sáng' : 'Chế độ tối';
   };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
   const rect = (event?.currentTarget || $('theme-toggle')).getBoundingClientRect();
-  const x = event?.detail > 0 ? event.clientX : rect.left + rect.width / 2;
-  const y = event?.detail > 0 ? event.clientY : rect.top + rect.height / 2;
-  const radius = Math.min(160, Math.min(innerWidth,innerHeight) * .3);
-  const timing = {duration:400,easing:'cubic-bezier(.25,.1,.25,1)',fill:'both'};
-      const hole = r => {
-        const points = ['0px 0px',`${innerWidth}px 0px`,`${innerWidth}px ${innerHeight}px`,`0px ${innerHeight}px`,'0px 0px'];
-        for (let i=0;i<=96;i++) {
-          const angle = i / 96 * Math.PI * 2;
-          points.push(`${x + Math.cos(angle)*r}px ${y + Math.sin(angle)*r}px`);
-        }
-        return `polygon(evenodd,${points.join(',')})`;
-      };
-  const revealFrames = {clipPath:[hole(0),hole(radius)],opacity:[1,0]};
-  themeBusy = true;
-  root.style.setProperty('--tx', x + 'px');
-  root.style.setProperty('--ty', y + 'px');
-  root.classList.add('theme-changing');
-  let snapshot, transition;
+  const x = event?.clientX || (rect.left + rect.width / 2), y = event?.clientY || (rect.top + rect.height / 2);
+  const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const c0 = `circle(0px at ${x}px ${y}px)`, c1 = `circle(${r}px at ${x}px ${y}px)`;
+  const timing = { duration: 520, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' };
+  const dir = next === 'dark' ? 'theme-to-dark' : 'theme-to-light';
+  themeBusy = true; root.classList.add('theme-changing', dir);
   try {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
-    if (typeof document.startViewTransition === 'function') {
-      transition = document.startViewTransition(apply);
-      // Observe completion even if ready rejects (e.g. a hidden document).
-      transition.finished.catch(() => {});
-      await transition.ready;
-      // Keep the circle(0) preset until the new snapshot is ready below the old one.
-      root.animate({clipPath:['inset(0)','inset(0)']},
-        {...timing,pseudoElement:'::view-transition-new(root)'});
-      await root.animate(revealFrames,
-        {...timing,pseudoElement:'::view-transition-old(root)'}).finished;
-      await transition.finished;
+    if (document.startViewTransition) {
+      const vt = document.startViewTransition(apply); await vt.ready;
+      await root.animate({ clipPath: next === 'dark' ? [c0, c1] : [c1, c0] }, { ...timing, pseudoElement: next === 'dark' ? '::view-transition-new(root)' : '::view-transition-old(root)' }).finished;
+      await vt.finished;
     } else {
-      // Keep the old page above the live new theme; expand a circular hole in it.
-      snapshot = document.createElement('div');
-      snapshot.className = 'theme-snapshot';
-      snapshot.setAttribute('aria-hidden','true');
-      snapshot.inert = true;
-      const oldBody = document.body.cloneNode(true);
-      const colors = getComputedStyle(root);
-      for (const name of colors) if (name.startsWith('--')) snapshot.style.setProperty(name,colors.getPropertyValue(name));
-      snapshot.dataset.theme = root.dataset.theme || 'light';
-      snapshot.style.colorScheme = colors.colorScheme;
-      oldBody.querySelectorAll('script').forEach(script => script.remove());
-      snapshot.append(oldBody);
-      document.body.append(snapshot);
-      snapshot.scrollTop = scrollY;
-      snapshot.scrollLeft = scrollX;
-      snapshot.style.clipPath = hole(0);
-      apply();
-      await snapshot.animate(revealFrames,timing).finished;
+      const snap = document.createElement('div'); snap.className = 'theme-snapshot'; snap.inert = true;
+      const clone = document.body.cloneNode(true); clone.querySelectorAll('script').forEach(s => s.remove());
+      const cs = getComputedStyle(root); for (const p of cs) if (p.startsWith('--')) snap.style.setProperty(p, cs.getPropertyValue(p));
+      snap.dataset.theme = root.dataset.theme || 'light'; snap.append(clone); document.body.append(snap);
+      apply(); await snap.animate({ clipPath: [c1, c0] }, timing).finished; snap.remove();
     }
-  } catch (_) {
-    transition?.skipTransition();
-    apply();
-  } finally {
-    snapshot?.remove();
-    root.classList.remove('theme-changing');
-    themeBusy = false;
-  }
+  } catch (_) { apply(); } finally { root.classList.remove('theme-changing', dir); themeBusy = false; }
 }
 $('theme-toggle').addEventListener('click',revealTheme);
 
