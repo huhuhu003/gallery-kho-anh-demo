@@ -226,7 +226,7 @@ body:has(#nav-sidebar.open) #nav-fab{left:min(280px,86vw)}
 html.theme-changing *,html.theme-changing *::before,html.theme-changing *::after{transition:none!important}
 html.theme-changing::view-transition-old(root),html.theme-changing::view-transition-new(root){animation:none;mix-blend-mode:normal}
 html.theme-changing::view-transition-group(root){animation:none}
-html.theme-changing::view-transition-old(root){z-index:1}
+html.theme-changing::view-transition-old(root){z-index:3}
 html.theme-changing::view-transition-new(root){z-index:2;clip-path:circle(0px at var(--tx,50%) var(--ty,50%))}
 .theme-snapshot{position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:none;background:var(--bg-body)}
 .theme-snapshot *,.theme-snapshot *::before,.theme-snapshot *::after{animation:none!important;transition:none!important}
@@ -438,8 +438,17 @@ async function revealTheme(event) {
   const rect = (event?.currentTarget || $('theme-toggle')).getBoundingClientRect();
   const x = event?.detail > 0 ? event.clientX : rect.left + rect.width / 2;
   const y = event?.detail > 0 ? event.clientY : rect.top + rect.height / 2;
-  const radius = Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y)) + 16;
-  const timing = {duration:560,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'};
+  const radius = Math.min(160, Math.min(innerWidth,innerHeight) * .3);
+  const timing = {duration:400,easing:'cubic-bezier(.25,.1,.25,1)',fill:'both'};
+      const hole = r => {
+        const points = ['0px 0px',`${innerWidth}px 0px`,`${innerWidth}px ${innerHeight}px`,`0px ${innerHeight}px`,'0px 0px'];
+        for (let i=0;i<=96;i++) {
+          const angle = i / 96 * Math.PI * 2;
+          points.push(`${x + Math.cos(angle)*r}px ${y + Math.sin(angle)*r}px`);
+        }
+        return `polygon(evenodd,${points.join(',')})`;
+      };
+  const revealFrames = {clipPath:[hole(0),hole(radius)],opacity:[1,0]};
   themeBusy = true;
   root.style.setProperty('--tx', x + 'px');
   root.style.setProperty('--ty', y + 'px');
@@ -452,8 +461,11 @@ async function revealTheme(event) {
       // Observe completion even if ready rejects (e.g. a hidden document).
       transition.finished.catch(() => {});
       await transition.ready;
-      await root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${radius}px at ${x}px ${y}px)`]},
-        {...timing,pseudoElement:'::view-transition-new(root)'}).finished;
+      // Keep the circle(0) preset until the new snapshot is ready below the old one.
+      root.animate({clipPath:['inset(0)','inset(0)']},
+        {...timing,pseudoElement:'::view-transition-new(root)'});
+      await root.animate(revealFrames,
+        {...timing,pseudoElement:'::view-transition-old(root)'}).finished;
       await transition.finished;
     } else {
       // Keep the old page above the live new theme; expand a circular hole in it.
@@ -471,17 +483,9 @@ async function revealTheme(event) {
       document.body.append(snapshot);
       snapshot.scrollTop = scrollY;
       snapshot.scrollLeft = scrollX;
-      const hole = r => {
-        const points = ['0px 0px',`${innerWidth}px 0px`,`${innerWidth}px ${innerHeight}px`,`0px ${innerHeight}px`,'0px 0px'];
-        for (let i=0;i<=96;i++) {
-          const angle = i / 96 * Math.PI * 2;
-          points.push(`${x + Math.cos(angle)*r}px ${y + Math.sin(angle)*r}px`);
-        }
-        return `polygon(evenodd,${points.join(',')})`;
-      };
       snapshot.style.clipPath = hole(0);
       apply();
-      await snapshot.animate({clipPath:[hole(0),hole(radius)]},timing).finished;
+      await snapshot.animate(revealFrames,timing).finished;
     }
   } catch (_) {
     transition?.skipTransition();
